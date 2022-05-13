@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>XML Parser - GPX</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CHANGE ME">
+    <meta name="keywords" content="CHANGE ME">
+    <meta name="author" content="CHANGE ME">
+    <!-- Load jquery, bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <!-- Custom CSS End -->
+</head>
+<body>
+    <div class="jumbotron text-center bg-dark text-white">
+        <h1>GPS Data Viewer</h1>
+        <p>By: Alexander Blankenstein</p>
+    </div>
+
+    <!-- File Log Panel -->
+    <div class="container p-3 my-3 border">
+        <div class="row">
+            <div class="col-12">
+                <h3>File Log Panel</h3>
+                <span id="statusMessage"></span>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>File Name (Click to download)</th>
+                    <th>Version</th>
+                    <th>Creator</th>
+                    <th>Number of Waypoints</th>
+                    <th>Number of Routes</th>
+                    <th>Number of Tracks</th>
+                </tr>
+            </thead>
+            <tbody id="fileLogPanel" class="card-action">
+            </tbody>
+        </table>
+        <div class="row">
+            <div class="col-12">
+                <h4>Upload File</h4>
+                <form ref='uploadForm'
+                      id='uploadForm'
+                      action='/upload'
+                      method='post'
+                      encType="multipart/form-data">
+                    <div class="form-group">
+                        <input type="file" name="uploadFile" class="btn btn-secondary">
+                        <input type='submit' value='Upload' class="btn btn-secondary">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- GPX View Panel -->
+    <div class="container p-3 my-3 border">
+        <div class="row">
+            <div class="col-12">
+                <h3>GPX View Panel</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="fileDropDown">Select File:</label>
+                    <select class="form-control" id="fileDropDown">
+                    </select>
+                </div>
+            </div>
+        </div>
+        <span id="gpxStatusMessage"></span>
+        <table id="gpxTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Component (Click for Other Data)</th>
+                    <th>Name (Click to Edit)</th>
+                    <th>Number of Points</th>
+                    <th>Length</th>
+                    <th>Loop</th>
+                </tr>
+            </thead>
+            <tbody id="gpxViewPanel" class="card-action">
+            </tbody>
+        </table>
+        <hr />
+        <div class="row">
+            <div class="col-12">
+                <h3>Edit Name</h3>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="compName">Component Name</label>
+            <input type="text" class="form-control" id="compName" placeholder="Name">
+        </div>
+        <hr />
+        <div class="row">
+            <div class="col-12">
+                <h3>Add Route</h3>
+            </div>
+        </div>
+        <form ref='addRoute'
+              id='addRoute'>
+            <div class="form-group" id="wptlist">
+                <label for="routeName">Name</label>
+                <input type="text" class="form-control" id="routeName" placeholder="Name">
+                <div class="row">
+                    <div class="col-6">
+                        <label for="routeLat1">Lat</label>
+                        <input type="number" class="form-control" id="routeLat1" value="43.533330" placeholder="43.533330" step="0.000001">
+                    </div>
+                    <div class="col-6">
+                        <label for="routeLon1">Lon</label>
+                        <input type="number" class="form-control" id="routeLon1" value="-80.223610" placeholder="-80.223610" step="0.000001">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <input type='submit' value="Add Route" class="btn btn-secondary">
+            </div>
+        </form>
+        <button class="btn btn-secondary" onclick="addWPT()">+</button>
+    </div>
+
+    <!-- Find Path Panel -->
+    <div class="container p-3 my-3 border">
+        <div class="row">
+            <div class="col-12">
+                <h3>Find Path Between</h3>
+            </div>
+        </div>
+        <form ref='findPath'
+              id='findPath'>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-6">
+                        <label for="entryBox">Source Lat</label>
+                        <input type="number" class="form-control" id="srcLat" value="49.595850" placeholder="43.533330" step="0.000001">
+                    </div>
+                    <div class="col-6">
+                        <label for="entryBox">Source Lon</label>
+                        <input type="number" class="form-control" id="srcLon" value="-123.620950" placeholder="-80.223610" step="0.000001">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <label for="entryBox">Destination Lat</label>
+                        <input type="number" class="form-control" id="destLat" value="49.598350" placeholder="43.533330" step="0.000001">
+                    </div>
+                    <div class="col-6">
+                        <label for="entryBox">Destination Lon</label>
+                        <input type="number" class="form-control" id="destLon" value="-123.619520" placeholder="-80.223610" step="0.000001">
+                    </div>
+                </div>
+                <label for="entryBox">Point Comparison Accuracy (Delta)</label>
+                <input type="number" class="form-control" id="delta" value="10" placeholder="10" step="0.05">
+            </div>
+            <div class="form-group">
+                <input type='submit' value="Find Path" class="btn btn-secondary">
+            </div>
+        </form>
+        <hr>
+        <span id="pathStatusMessage"></span>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Number of Points</th>
+                    <th>Length</th>
+                    <th>Loop</th>
+                </tr>
+            </thead>
+            <tbody id="findPathPanel" class="card-action">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Create New GPX -->
+    <div class="container p-3 my-3 border">
+        <div class="row">
+            <div class="col-12">
+                <h3>Create New GPX</h3>
+            </div>
+        </div>
+        <form ref='createFile'
+              id='createFile'>
+            <div class="form-group">
+                <label for="fileNameEntry">File Name</label>
+                <input type="text" class="form-control" id="fileNameEntry" placeholder="File Name">
+            </div>
+            <div class="form-group">
+                <input type='submit' value="createFile" class="btn btn-secondary">
+            </div>
+        </form>
+    </div>
+
+    <div class="jumbotron text-center bg-dark text-white">
+        <h1>Database</h1>
+    </div>
+
+    <!-- Connect Panel -->
+    <div class="container p-3 my-3 border">
+        <div class="row">
+            <div class="col-12">
+                <h3>Connect</h3>
+            </div>
+        </div>
+        <form ref='connectform'
+              id='connectform'>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-4">
+                        <label for="login_username">Username</label>
+                        <input type="text" class="form-control" id="login_username" placeholder="user name">
+                    </div>
+                    <div class="col-4">
+                        <label for="login_password">Password</label>
+                        <input type="password" class="form-control" id="login_password" placeholder="*******">
+                    </div>
+                    <div class="col-4">
+                        <label for="login_dbname">Datebase Name</label>
+                        <input type="text" class="form-control" id="login_dbname" placeholder="user name">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <input type='submit' value="Connect" class="btn btn-secondary">
+            </div>
+        </form>
+    </div>
+
+    <div class="container p-3 my-3 border" id="options">
+        <div class="row">
+            <div class="col-12">
+                <h3>Options</h3>
+            </div>
+        </div>
+        <form ref='optionsform'
+              id='optionsform'>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-3">
+                        <button class="btn btn-secondary" onclick="storeFiles()">Store All Files</button>
+                    </div>
+                    <div class="col-3">
+                        <button class="btn btn-secondary" onclick="update()">Track route Updates</button>
+                    </div>
+                    <div class="col-3">
+                        <button class="btn btn-secondary" onclick="clearData()">Clear All Data</button>
+                    </div>
+                    <div class="col-3">
+                        <button class="btn btn-secondary" onclick="displayDBStatus()">Display DB Status</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Querry Panel -->
+    <div class="container p-3 my-3 border" id="querry">
+        <div class="row">
+            <div class="col-12">
+                <h3>Querry</h3>
+            </div>
+        </div>
+        <form ref='querryform'
+              id='querryform'>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-2">
+                        <label>All Routes</label>
+                    </div>
+                    <div class="col-2">
+                        <label for="query_file">All Routes From File</label>
+                        <input id="query_file" type="text" class="form-control" placeholder="filename">
+                    </div>
+                    <div class="col-2">
+                        <label>All Points on Route</label>
+                    </div>
+                    <div class="col-2">
+                        <label for="query_file">All Points From File</label>
+                        <input id="query_file" type="text" class="form-control" placeholder="filename">
+                    </div>
+                    <div class="col-4">
+                        <label for="query_organizer">N Shortest and N longest Routes</label>
+                        <input id="query_organizer" type="text" class="form-control" placeholder="filename">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-2">
+                        <button class="btn btn-secondary" onclick="allRoutes()">Run</button>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-secondary" onclick="allRoutesFromFile()">Run</button>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-secondary" onclick="allPoints()">Run</button>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-secondary" onclick="allPointsFromFile()">Run</button>
+                    </div>
+                    <div class="col-4">
+                        <button class="btn btn-secondary" onclick="routesShortLong()">Run</button>
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <div class="row">
+                <div class="col-12">
+                    <table class="table table-bordered" id="query_output">
+                    </table>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+    <hr />
+    <!-- Leave me at the bottom of body -->
+    <script src="/index.js"></script>
+</body>
+</html>
