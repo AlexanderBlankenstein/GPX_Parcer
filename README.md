@@ -178,7 +178,6 @@ The stub provides `app.get()` and `app.port()` routes for handling .vcf file upl
 'use strict'
 
 // This gives us direct access to C functions from our library
-// Not needed in Module 1
 const ffi = require('ffi-napi');
 
 // Express App library
@@ -189,7 +188,6 @@ const app     = express();
 const path    = require("path");
 
 // File Upload library
-// Not needed in module 1
 const fileUpload = require('express-fileupload');
 app.use(fileUpload());
 
